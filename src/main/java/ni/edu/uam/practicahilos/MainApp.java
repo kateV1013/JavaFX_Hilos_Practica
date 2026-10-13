@@ -14,8 +14,11 @@ public class MainApp extends Application {
         );
 
         Scene scene = new Scene(loader.load());
+        scene.getStylesheets().add(
+                MainApp.class.getResource("styles.css").toExternalForm()
+        );
 
-        stage.setTitle("Práctica - Hilos en JavaFX");
+        stage.setTitle("Practica - Hilos en JavaFX");
         stage.setScene(scene);
         stage.show();
 
