@@ -8,6 +8,20 @@ import javafx.scene.control.ProgressBar;
 
 public class ProcesadorController {
 
+    private enum TipoProceso {
+        CLIENTES,
+        PRODUCTOS
+    }
+
+    @FXML
+    private Label lblEstadoGeneral;
+
+    @FXML
+    private Label lblPorcentajeGeneral;
+
+    @FXML
+    private ProgressBar barraGeneral;
+
     @FXML
     private Label lblEstadoClientes;
 
@@ -43,6 +57,8 @@ public class ProcesadorController {
 
     private Thread hiloClientes;
     private Thread hiloProductos;
+    private double progresoClientes;
+    private double progresoProductos;
 
     @FXML
     private void iniciarClientes() {
@@ -51,6 +67,7 @@ public class ProcesadorController {
         }
 
         prepararProceso(
+                TipoProceso.CLIENTES,
                 barraClientes,
                 lblPorcentajeClientes,
                 lblEstadoClientes,
@@ -60,6 +77,7 @@ public class ProcesadorController {
         );
 
         Runnable tareaClientes = crearTareaProceso(
+                TipoProceso.CLIENTES,
                 100,
                 100,
                 barraClientes,
@@ -94,6 +112,7 @@ public class ProcesadorController {
         }
 
         prepararProceso(
+                TipoProceso.PRODUCTOS,
                 barraProductos,
                 lblPorcentajeProductos,
                 lblEstadoProductos,
@@ -103,6 +122,7 @@ public class ProcesadorController {
         );
 
         Runnable tareaProductos = crearTareaProceso(
+                TipoProceso.PRODUCTOS,
                 50,
                 160,
                 barraProductos,
@@ -137,6 +157,7 @@ public class ProcesadorController {
         }
 
         reiniciarProceso(
+                TipoProceso.CLIENTES,
                 barraClientes,
                 lblPorcentajeClientes,
                 lblEstadoClientes,
@@ -145,6 +166,7 @@ public class ProcesadorController {
         );
 
         reiniciarProceso(
+                TipoProceso.PRODUCTOS,
                 barraProductos,
                 lblPorcentajeProductos,
                 lblEstadoProductos,
@@ -154,6 +176,7 @@ public class ProcesadorController {
     }
 
     private Runnable crearTareaProceso(
+            TipoProceso tipoProceso,
             int totalRegistros,
             int milisegundosPorRegistro,
             ProgressBar barraProgreso,
@@ -177,8 +200,10 @@ public class ProcesadorController {
                     final int porcentaje = (int) Math.round((avance * 100.0) / totalRegistros);
 
                     Platform.runLater(() -> {
-                        barraProgreso.setProgress(avance / (double) totalRegistros);
+                        double progreso = avance / (double) totalRegistros;
+                        barraProgreso.setProgress(progreso);
                         lblPorcentaje.setText(porcentaje + "%");
+                        actualizarProgresoGeneral(tipoProceso, progreso);
                     });
                 }
 
@@ -202,6 +227,7 @@ public class ProcesadorController {
     }
 
     private void prepararProceso(
+            TipoProceso tipoProceso,
             ProgressBar barraProgreso,
             Label lblPorcentaje,
             Label lblEstado,
@@ -211,6 +237,7 @@ public class ProcesadorController {
     ) {
         barraProgreso.setProgress(0);
         lblPorcentaje.setText("0%");
+        actualizarProgresoGeneral(tipoProceso, 0);
         lblEstado.setText(mensajeEstado);
         btnIniciar.setDisable(true);
         btnDetener.setDisable(false);
@@ -243,6 +270,7 @@ public class ProcesadorController {
     }
 
     private void reiniciarProceso(
+            TipoProceso tipoProceso,
             ProgressBar barraProgreso,
             Label lblPorcentaje,
             Label lblEstado,
@@ -255,6 +283,29 @@ public class ProcesadorController {
         btnIniciar.setDisable(false);
         btnDetener.setDisable(true);
         btnReiniciar.setDisable(false);
+        actualizarProgresoGeneral(tipoProceso, 0);
+    }
+
+    private void actualizarProgresoGeneral(TipoProceso tipoProceso, double progreso) {
+        if (tipoProceso == TipoProceso.CLIENTES) {
+            progresoClientes = progreso;
+        } else {
+            progresoProductos = progreso;
+        }
+
+        double progresoGeneral = (progresoClientes + progresoProductos) / 2.0;
+        int porcentajeGeneral = (int) Math.round(progresoGeneral * 100);
+
+        barraGeneral.setProgress(progresoGeneral);
+        lblPorcentajeGeneral.setText(porcentajeGeneral + "%");
+
+        if (porcentajeGeneral == 0) {
+            lblEstadoGeneral.setText("Esperando procesos");
+        } else if (porcentajeGeneral == 100) {
+            lblEstadoGeneral.setText("Todos los procesos finalizados");
+        } else {
+            lblEstadoGeneral.setText("Avance general de clientes y productos");
+        }
     }
 
     private boolean estaEnEjecucion(Thread hilo) {
